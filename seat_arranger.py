@@ -1,47 +1,48 @@
 from openpyxl import Workbook, load_workbook
 from random import shuffle
+import sys
 import argparse
-import shutil
 
-
-AVAILABLE_COLS_IN_EACH_ROOM = {
-    '65105': ['B', 'E', 'H', 'K', 'N', 'Q'],
-    '4264': ['B', 'D', 'F', 'H', 'J', 'L', 'N'],
-    'A1302': ['B', 'D', 'F', 'H', 'J', 'L', 'N', 'Q', 'S']
-}
-START_ROW = 5
-END_ROW = 30
-
-def arrange_seat(student_file, format_file, number):
-    arranged_wb = load_workbook(filename=format_file)
-    student_wb = load_workbook(filename=student_file)
-    student_ws = student_wb.active
-    index_list = list(range(1, 2 + int(number)))
-    available_rows = range(START_ROW, END_ROW)
+def arrange_seat(input_file, number_of_rooms):
+    workbook = load_workbook(filename=input_file, data_only=True)
+    try:
+        students = workbook['students']
+    except KeyError:
+        print("student worksheet does not present in the file.")
+    try:
+        stats = workbook['stats']
+    except KeyError:
+        print("stats worksheet does not present in the file.")
+    number_of_students = int(stats['A2'].value)
+    index_list = list(range(1, number_of_students + 2))
     shuffle(index_list)
     counter = 0
     try:
-        for room, cols in AVAILABLE_COLS_IN_EACH_ROOM.items():
-            ws = arranged_wb[room]
-            print(room)
-            for col in cols:
-                for row in available_rows:
-                    if counter > int(number):
+        for i in range(2, int(number_of_rooms) + 2):
+            ws = workbook[stats[f"C{i}"].value]
+            for col in range(ord(stats[f"D{i}"].value), ord(stats[f"E{i}"].value) + 1):
+                for row in range(5, int(stats[f"F{i}"].value)):
+                    if counter > int(number_of_students):
                         break
-                    if ws[f"{col}{row}"].value == 'x':
-                        ws[f"{col}{row}"] = student_ws[f"A{index_list[counter]}"].value
+                    if ws[f"{chr(col)}{row}"].value == 'x':
+                        ws[f"{chr(col)}{row}"] = students[f"A{index_list[counter]}"].value
                         counter += 1
     except IndexError:
         pass
-    arranged_wb.save(filename=f"arranged_{format_file}")
-    arranged_wb.close()
+    workbook.save(filename=f"arranged_{input_file}")
+    workbook.close()
 
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s', '--student_file')
-    parser.add_argument('-n', '--number')
-    parser.add_argument('-f', '--format_file', default='seats.xlsx')
+    parser.add_argument('-i', '--input_file')
+    parser.add_argument('-n', '--rooms')
     args = parser.parse_args()
 
-    arrange_seat(args.student_file, args.format_file, args.number)
+    arrange_seat(args.input_file, args.rooms)
+
+if __name__ == '__main__':
+    try:
+        main()
+    except:
+        print("Something wrong with provided input file")
+        sys.exit(0)
