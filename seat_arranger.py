@@ -14,7 +14,7 @@ def arrange_seat(input_file, number_of_rooms):
     except KeyError:
         print("stats worksheet does not present in the file.")
     number_of_students = int(stats['A2'].value)
-    index_list = list(range(1, number_of_students + 2))
+    index_list = list(range(1, number_of_students + 1))
     shuffle(index_list)
     counter = 0
     try:
